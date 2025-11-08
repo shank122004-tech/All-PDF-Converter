@@ -14,9 +14,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Stripe Configuration
-const stripe = Stripe('pk_test_51QN5S1SJ9w2p6w9p8KjvR7mZ6X1Y3qA9bL4tM7nVcF2eD5gH1'); // Replace with your Stripe publishable key
-
 // DOM Elements
 const loginBtn = document.getElementById('login-btn');
 const signupBtn = document.getElementById('signup-btn');
@@ -52,6 +49,8 @@ const statusText = document.querySelector('.status-text');
 let isLoginMode = true;
 let currentUser = null;
 let selectedFile = null;
+let convertedFileUrl = null;
+let convertedFileName = '';
 let userData = {
     isPremium: false,
     conversionsUsed: 0,
@@ -89,6 +88,8 @@ window.addEventListener('click', (e) => {
 
 // Initialize Application
 async function initApp() {
+    console.log('Initializing application...');
+    
     // Check authentication state
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -113,6 +114,12 @@ async function initApp() {
     
     // Update usage counter
     updateUsageCounter();
+    
+    // Add demo premium button listener
+    const demoPremiumBtn = document.getElementById('demo-premium');
+    if (demoPremiumBtn) {
+        demoPremiumBtn.addEventListener('click', activateDemoPremium);
+    }
 }
 
 // User Data Management
@@ -184,7 +191,10 @@ function updateAuthModal() {
     }
     
     // Re-attach event listener after updating HTML
-    document.getElementById('auth-switch-link').addEventListener('click', toggleAuthMode);
+    const switchLink = document.getElementById('auth-switch-link');
+    if (switchLink) {
+        switchLink.addEventListener('click', toggleAuthMode);
+    }
 }
 
 function toggleAuthMode(e) {
@@ -279,23 +289,19 @@ function updateUIForGuest() {
 }
 
 function updateUsageCounter() {
-    const usageCounter = document.querySelector('.usage-counter');
+    let usageCounter = document.querySelector('.usage-counter');
     if (!usageCounter) {
         // Create usage counter if it doesn't exist
         const converterBody = document.querySelector('.converter-body');
-        const newUsageCounter = document.createElement('div');
-        newUsageCounter.className = 'usage-counter';
-        newUsageCounter.innerHTML = `
-            <p>Conversions used today: <span class="count">${userData.conversionsUsed}</span> / ${userData.conversionsLimit}</p>
-            ${!userData.isPremium ? '<p><small>Free users get 5 conversions per day</small></p>' : ''}
-        `;
-        converterBody.appendChild(newUsageCounter);
-    } else {
-        usageCounter.innerHTML = `
-            <p>Conversions used today: <span class="count">${userData.conversionsUsed}</span> / ${userData.conversionsLimit}</p>
-            ${!userData.isPremium ? '<p><small>Free users get 5 conversions per day</small></p>' : ''}
-        `;
+        usageCounter = document.createElement('div');
+        usageCounter.className = 'usage-counter';
+        converterBody.appendChild(usageCounter);
     }
+    
+    usageCounter.innerHTML = `
+        <p>Conversions used today: <span class="count">${userData.conversionsUsed}</span> / ${userData.conversionsLimit}</p>
+        ${!userData.isPremium ? '<p><small>Free users get 5 conversions per day</small></p>' : ''}
+    `;
 }
 
 // File Handling Functions
@@ -336,6 +342,8 @@ function handleFileSelect(e) {
 }
 
 function handleFiles(file) {
+    console.log('File selected:', file);
+    
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
         showNotification('File size must be less than 10MB', 'error');
@@ -371,6 +379,7 @@ function handleFiles(file) {
     
     // Enable convert button
     convertBtn.disabled = false;
+    console.log('Convert button enabled');
 }
 
 function formatFileSize(bytes) {
@@ -383,6 +392,8 @@ function formatFileSize(bytes) {
 
 // Conversion Functions
 async function handleConversion() {
+    console.log('Conversion started...');
+    
     if (!selectedFile) {
         showNotification('Please select a file first!', 'error');
         return;
@@ -398,15 +409,26 @@ async function handleConversion() {
     convertBtn.disabled = true;
     convertBtn.textContent = 'Converting...';
     conversionStatus.style.display = 'block';
+    statusText.textContent = 'Converting your file...';
+    
+    // Get conversion options
+    const fromFormat = document.getElementById('from-format').value;
+    const toFormat = document.getElementById('to-format').value;
+    
+    console.log(`Converting from ${fromFormat} to ${toFormat}`);
     
     // Simulate conversion process with progress
     let progress = 0;
     const interval = setInterval(() => {
         progress += 10;
         progressBar.style.width = `${progress}%`;
+        statusText.textContent = `Converting... ${progress}%`;
         
         if (progress >= 100) {
             clearInterval(interval);
+            
+            // Create converted file
+            createConvertedFile(fromFormat, toFormat);
             
             // Increment conversion count
             incrementConversionCount();
@@ -426,38 +448,148 @@ async function handleConversion() {
                 conversionStatus.style.display = 'none';
                 progressBar.style.width = '0%';
             }, 1000);
+            
+            console.log('Conversion completed successfully');
         }
     }, 200);
 }
 
+function createConvertedFile(fromFormat, toFormat) {
+    console.log('Creating converted file...');
+    
+    const originalName = selectedFile.name;
+    const baseName = originalName.substring(0, originalName.lastIndexOf('.'));
+    
+    // Generate converted file name
+    convertedFileName = `${baseName}_converted.${toFormat}`;
+    
+    // Create file content based on format
+    let content = '';
+    let mimeType = 'text/plain';
+    
+    switch(toFormat) {
+        case 'pdf':
+            content = `PDF Document - Converted from ${fromFormat}\n\n`;
+            mimeType = 'application/pdf';
+            break;
+        case 'doc':
+        case 'docx':
+            content = `Word Document - Converted from ${fromFormat}\n\n`;
+            mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            break;
+        case 'xls':
+        case 'xlsx':
+            content = `Excel Spreadsheet - Converted from ${fromFormat}\n\n`;
+            mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            break;
+        case 'ppt':
+        case 'pptx':
+            content = `PowerPoint Presentation - Converted from ${fromFormat}\n\n`;
+            mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            break;
+        case 'jpg':
+        case 'png':
+            content = `Image File - Converted from ${fromFormat}\n\n`;
+            mimeType = 'image/jpeg';
+            break;
+        default:
+            content = `Text File - Converted from ${fromFormat}\n\n`;
+            mimeType = 'text/plain';
+    }
+    
+    content += `Original file: ${originalName}\n`;
+    content += `Original format: ${fromFormat}\n`;
+    content += `Target format: ${toFormat}\n`;
+    content += `Converted on: ${new Date().toLocaleString()}\n`;
+    content += `File size: ${formatFileSize(selectedFile.size)}\n\n`;
+    
+    if (!userData.isPremium) {
+        content += '--- Converted with DocConvert Pro (Free Version) ---\n';
+        content += 'WATERMARK: This document contains a watermark from the free version.\n';
+        content += 'Upgrade to Premium for watermark-free conversions!\n';
+    } else {
+        content += '--- Converted with DocConvert Pro (Premium Version) ---\n';
+        content += 'Premium Feature: No watermark, high quality conversion\n';
+    }
+    
+    content += '\nThank you for using DocConvert Pro!\n';
+    
+    // Create blob and URL
+    const blob = new Blob([content], { type: mimeType });
+    convertedFileUrl = URL.createObjectURL(blob);
+    
+    console.log('Converted file created:', convertedFileName);
+}
+
 function showCelebration() {
+    console.log('Showing celebration modal');
+    
     celebration.style.display = 'flex';
     
     // Position confetti randomly
     const confettiElements = document.querySelectorAll('.confetti');
-    confettiElements.forEach(confetti => {
+    confettiElements.forEach((confetti, index) => {
         const left = Math.random() * 100;
         const animationDelay = Math.random() * 5;
         confetti.style.left = `${left}%`;
         confetti.style.animationDelay = `${animationDelay}s`;
     });
+    
+    // Update download button text based on premium status
+    if (!userData.isPremium) {
+        downloadBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right: 8px;"><path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Download File (With Watermark)';
+    } else {
+        downloadBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="margin-right: 8px;"><path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Download File (Premium)';
+    }
 }
 
 function handleDownload() {
-    // In a real app, this would download the converted file
-    // For demo purposes, we'll just show a notification
-    showNotification('File downloaded successfully!', 'success');
+    console.log('Download initiated');
     
-    // Add watermark for free users
-    if (!userData.isPremium) {
-        showNotification('Free version - Watermark added to document', 'info');
+    if (!convertedFileUrl) {
+        showNotification('No converted file available. Please convert a file first.', 'error');
+        return;
     }
+    
+    try {
+        // Create download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = convertedFileUrl;
+        downloadLink.download = convertedFileName;
+        
+        // Trigger download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Show notification
+        showNotification('File downloaded successfully!', 'success');
+        
+        // Add watermark notification for free users
+        if (!userData.isPremium) {
+            showNotification('Free version - Watermark added to document', 'info');
+        }
+        
+        console.log('File downloaded:', convertedFileName);
+        
+    } catch (error) {
+        console.error('Download error:', error);
+        showNotification('Error downloading file. Please try again.', 'error');
+    }
+}
+
+function handleConvertAnother() {
+    console.log('Starting new conversion');
     
     celebration.style.display = 'none';
     
     // Reset file selection
     selectedFile = null;
+    convertedFileUrl = null;
+    convertedFileName = '';
     fileInput.value = '';
+    
+    // Reset upload area
     uploadArea.innerHTML = `
         <div class="upload-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -470,12 +602,11 @@ function handleDownload() {
         </div>
         <p>Drag & drop your file here or <span class="browse-link">browse</span></p>
     `;
+    
     convertBtn.disabled = true;
     previewBtn.disabled = true;
-}
-
-function handleConvertAnother() {
-    celebration.style.display = 'none';
+    
+    console.log('Ready for new conversion');
 }
 
 // Payment Functions
@@ -490,98 +621,67 @@ function openPaymentModal() {
 
 async function handleStripePayment() {
     try {
-        // Create checkout session
-        const response = await fetch('/create-checkout-session', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: currentUser.uid,
-                email: currentUser.email,
-            }),
-        });
-
-        const session = await response.json();
-
-        // Redirect to Stripe Checkout
-        const result = await stripe.redirectToCheckout({
-            sessionId: session.id,
-        });
-
-        if (result.error) {
-            showNotification(result.error.message, 'error');
-        }
+        showNotification('Redirecting to Stripe payment...', 'info');
+        
+        // For demo purposes, we'll simulate a successful payment
+        setTimeout(() => {
+            simulateSuccessfulPayment();
+        }, 2000);
+        
     } catch (error) {
         console.error('Error:', error);
         showNotification('Error processing payment. Please try again.', 'error');
-        
-        // For demo purposes, simulate successful payment
-        simulateSuccessfulPayment();
     }
 }
 
 async function handleRazorpayPayment() {
     try {
-        const options = {
-            key: 'https://rzp.io/rzp/ggY8XrZ', // Replace with your Razorpay key
-            amount: 41500, // 415 INR in paise
-            currency: 'INR',
-            name: 'DocConvert Pro',
-            description: 'Premium Subscription',
-            image: '/logo.png',
-            handler: async function(response) {
-                // Payment successful
-                await verifyRazorpayPayment(response);
-            },
-            prefill: {
-                name: currentUser.displayName || '',
-                email: currentUser.email,
-            },
-            theme: {
-                color: '#00f3ff'
-            }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.open();
+        // Redirect to Razorpay payment link
+        const razorpayPaymentLink = 'https://rzp.io/l/docconvert-pro-premium';
+        window.open(razorpayPaymentLink, '_blank');
+        
+        showNotification('Redirected to Razorpay payment page. Please complete the payment to activate premium features.', 'info');
+        
+        // Show verification option for demo
+        showPaymentVerificationOption();
+        
     } catch (error) {
         console.error('Error:', error);
         showNotification('Error processing payment. Please try again.', 'error');
-        
-        // For demo purposes, simulate successful payment
-        simulateSuccessfulPayment();
     }
 }
 
-async function verifyRazorpayPayment(paymentResponse) {
-    try {
-        const response = await fetch('/verify-razorpay-payment', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                paymentId: paymentResponse.razorpay_payment_id,
-                orderId: paymentResponse.razorpay_order_id,
-                signature: paymentResponse.razorpay_signature,
-                userId: currentUser.uid,
-            }),
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            await activatePremium(currentUser.uid);
-            showNotification('Premium subscription activated successfully!', 'success');
-            paymentModal.style.display = 'none';
-        } else {
-            showNotification('Payment verification failed', 'error');
-        }
-    } catch (error) {
-        console.error('Error verifying payment:', error);
-        showNotification('Error verifying payment', 'error');
+function showPaymentVerificationOption() {
+    // Remove existing verify button if any
+    const existingButton = document.querySelector('#payment-verify-btn');
+    if (existingButton) {
+        existingButton.remove();
     }
+    
+    // Create a verification button for demo purposes
+    const verifyButton = document.createElement('button');
+    verifyButton.id = 'payment-verify-btn';
+    verifyButton.textContent = 'I have completed the payment';
+    verifyButton.className = 'btn btn-primary';
+    verifyButton.style.marginTop = '10px';
+    verifyButton.style.width = '100%';
+    
+    verifyButton.addEventListener('click', () => {
+        simulateSuccessfulPayment();
+        verifyButton.remove();
+    });
+    
+    const paymentOption = document.querySelector('.payment-option:last-child');
+    paymentOption.appendChild(verifyButton);
+}
+
+function activateDemoPremium() {
+    if (!currentUser) {
+        showNotification('Please create an account first', 'error');
+        openAuthModal(false);
+        return;
+    }
+    simulateSuccessfulPayment();
 }
 
 async function activatePremium(userId) {
@@ -593,14 +693,19 @@ async function activatePremium(userId) {
         userData.subscriptionEnd = subscriptionEnd.toISOString();
         userData.conversionsLimit = 9999; // Unlimited
         
-        await db.collection('users').doc(userId).update({
-            isPremium: true,
-            subscriptionEnd: subscriptionEnd.toISOString(),
-            conversionsLimit: 9999
-        });
+        if (currentUser) {
+            await db.collection('users').doc(currentUser.uid).update({
+                isPremium: true,
+                subscriptionEnd: subscriptionEnd.toISOString(),
+                conversionsLimit: 9999
+            });
+        }
         
         updateUIForUser(currentUser);
-        showNotification('Premium features activated!', 'success');
+        showNotification('Premium features activated successfully!', 'success');
+        paymentModal.style.display = 'none';
+        
+        console.log('Premium activated for user:', userId);
     } catch (error) {
         console.error('Error activating premium:', error);
         showNotification('Error activating premium features', 'error');
@@ -612,6 +717,8 @@ function simulateSuccessfulPayment() {
     if (currentUser) {
         activatePremium(currentUser.uid);
         paymentModal.style.display = 'none';
+    } else {
+        showNotification('Please create an account first', 'error');
     }
 }
 
@@ -623,6 +730,10 @@ function closeModals() {
 }
 
 function showNotification(message, type) {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -696,5 +807,57 @@ style.textContent = `
         cursor: pointer;
         margin-left: 10px;
     }
+    
+    /* Download button specific styles */
+    #download-btn {
+        background: linear-gradient(45deg, var(--success-color), var(--accent-color));
+        color: var(--dark-bg);
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    #download-btn:hover {
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.8);
+        transform: translateY(-2px);
+    }
+    
+    /* Enhanced Progress Bar */
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(0, 243, 255, 0.2);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        position: relative;
+    }
+    
+    .progress {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        width: 0%;
+        transition: width 0.3s ease;
+        position: relative;
+    }
+    
+    .progress::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
 `;
 document.head.appendChild(style);
+
+console.log('Script loaded successfully');
