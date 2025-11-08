@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocConvert Pro | Free PDF & Document Converter</title>
+    <meta name="description" content="Convert any document format for free with DocConvert Pro. PDF, Word, Excel, PowerPoint conversions with premium features for unlimited conversions without watermark.">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h1 class="neon-text">DocConvert<span class="neon-accent">Pro</span></h1>
+            </div>
+            <div class="nav-menu">
+                <a href="#converter" class="nav-link">Converter</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#premium" class="nav-link">Premium</a>
+                <div class="auth-buttons">
+                    <button id="login-btn" class="btn btn-login">Login</button>
+                    <button id="signup-btn" class="btn btn-signup">Sign Up</button>
+                    <button id="logout-btn" class="btn btn-logout" style="display: none;">Logout</button>
+                </div>
+            </div>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title neon-text">Convert Any Document <span class="neon-accent">Instantly</span></h1>
+                <p class="hero-description">Free PDF, Word, Excel, PowerPoint conversions with professional quality. No registration required for basic conversions!</p>
+                <div class="hero-buttons">
+                    <a href="#converter" class="btn btn-primary">Start Converting</a>
+                    <a href="#premium" class="btn btn-secondary">Go Premium</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="neon-circle"></div>
+                <div class="file-icons">
+                    <div class="file-icon pdf">PDF</div>
+                    <div class="file-icon doc">DOC</div>
+                    <div class="file-icon xls">XLS</div>
+                    <div class="file-icon ppt">PPT</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Converter Section -->
+    <section id="converter" class="converter">
+        <div class="container">
+            <h2 class="section-title neon-text">Document Converter</h2>
+            <div class="converter-card">
+                <div class="converter-header">
+                    <h3>Upload Your File</h3>
+                    <p>Convert between PDF, Word, Excel, PowerPoint, and more</p>
+                </div>
+                <div class="converter-body">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M10 9H9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p>Drag & drop your file here or <span class="browse-link">browse</span></p>
+                        <input type="file" id="file-input" hidden>
+                    </div>
+                    <div class="converter-options">
+                        <div class="option-group">
+                            <label for="from-format">Convert From:</label>
+                            <select id="from-format">
+                                <option value="pdf">PDF Document</option>
+                                <option value="doc">Word Document</option>
+                                <option value="docx">Word Document (DOCX)</option>
+                                <option value="xls">Excel Spreadsheet</option>
+                                <option value="xlsx">Excel Spreadsheet (XLSX)</option>
+                                <option value="ppt">PowerPoint Presentation</option>
+                                <option value="pptx">PowerPoint Presentation (PPTX)</option>
+                                <option value="txt">Text File</option>
+                                <option value="jpg">JPG Image</option>
+                                <option value="png">PNG Image</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label for="to-format">Convert To:</label>
+                            <select id="to-format">
+                                <option value="pdf">PDF Document</option>
+                                <option value="doc">Word Document</option>
+                                <option value="docx">Word Document (DOCX)</option>
+                                <option value="xls">Excel Spreadsheet</option>
+                                <option value="xlsx">Excel Spreadsheet (XLSX)</option>
+                                <option value="ppt">PowerPoint Presentation</option>
+                                <option value="pptx">PowerPoint Presentation (PPTX)</option>
+                                <option value="txt">Text File</option>
+                                <option value="jpg">JPG Image</option>
+                                <option value="png">PNG Image</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="conversion-options" id="premium-options" style="display: none;">
+                        <h4>Premium Options</h4>
+                        <div class="premium-option">
+                            <input type="checkbox" id="no-watermark" checked>
+                            <label for="no-watermark">No Watermark</label>
+                        </div>
+                        <div class="premium-option">
+                            <input type="checkbox" id="high-quality">
+                            <label for="high-quality">High Quality (300 DPI)</label>
+                        </div>
+                        <div class="premium-option">
+                            <input type="checkbox" id="batch-mode">
+                            <label for="batch-mode">Batch Conversion</label>
+                        </div>
+                    </div>
+                    <div class="converter-actions">
+                        <button id="convert-btn" class="btn btn-primary">Convert Now</button>
+                        <button id="preview-btn" class="btn btn-secondary" disabled>Preview</button>
+                    </div>
+                    <div class="conversion-status" id="conversion-status" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress"></div>
+                        </div>
+                        <p class="status-text">Converting your file...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title neon-text">Why Choose DocConvert Pro?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>All Format Support</h3>
+                    <p>Convert between PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG and more.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15848 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 17H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>No Registration Required</h3>
+                    <p>Convert files instantly without creating an account. Free users get 5 conversions per day with watermark.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>High Quality Conversions</h3>
+                    <p>Maintain formatting, images, and layout integrity during conversion with our advanced algorithms.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3>Fast Processing</h3>
+                    <p>Convert documents in seconds with our optimized cloud infrastructure. No waiting in queues.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Section -->
+    <section id="premium" class="premium">
+        <div class="container">
+            <h2 class="section-title neon-text">Go Premium - Only $5/month</h2>
+            <div class="premium-container">
+                <div class="premium-card">
+                    <div class="premium-header">
+                        <h3>Premium Features</h3>
+                        <div class="price">
+                            <span class="currency">$</span>
+                            <span class="amount">5</span>
+                            <span class="period">/month</span>
+                        </div>
+                    </div>
+                    <div class="premium-features">
+                        <div class="premium-feature">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Unlimited conversions without watermark</span>
+                        </div>
+                        <div class="premium-feature">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Priority processing - faster conversions</span>
+                        </div>
+                        <div class="premium-feature">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Batch conversion - convert multiple files at once</span>
+                        </div>
+                        <div class="premium-feature">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Advanced formatting options</span>
+                        </div>
+                        <div class="premium-feature">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Cloud storage for converted files</span>
+                        </div>
+                        <div class="premium-feature">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>Priority customer support</span>
+                        </div>
+                    </div>
+                    <div class="premium-actions">
+                        <button id="premium-btn" class="btn btn-premium">Upgrade to Premium</button>
+                        <div id="premium-status" class="premium-status" style="display: none;">
+                            <span class="premium-badge">Premium Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Login to Your Account</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="auth-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <div class="form-group" id="confirm-password-group" style="display: none;">
+                        <label for="confirm-password">Confirm Password</label>
+                        <input type="password" id="confirm-password">
+                    </div>
+                    <button type="submit" id="auth-submit" class="btn btn-primary">Login</button>
+                </form>
+                <div class="auth-switch">
+                    <p id="auth-switch-text">Don't have an account? <a href="#" id="auth-switch-link">Sign up</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upgrade to Premium</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="payment-options">
+                    <div class="payment-option">
+                        <h3>United States & International</h3>
+                        <p>Pay with Stripe (Credit Card, Apple Pay, Google Pay)</p>
+                        <button id="stripe-payment" class="btn btn-primary">Pay with Stripe - $5/month</button>
+                    </div>
+                    <div class="payment-option">
+                        <h3>India</h3>
+                        <p>Pay with Razorpay (UPI, Net Banking, Credit/Debit Card)</p>
+                        <button id="razorpay-payment" class="btn btn-primary">Pay with Razorpay - ₹415/month</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Animation -->
+    <div id="celebration" class="celebration">
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="confetti"></div>
+        <div class="message">
+            <h2>Conversion Successful!</h2>
+            <p>Your document has been converted successfully.</p>
+            <button id="download-btn" class="btn btn-primary">Download File</button>
+            <button id="convert-another-btn" class="btn btn-secondary">Convert Another File</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="neon-text">DocConvert<span class="neon-accent">Pro</span></h3>
+                    <p>The ultimate document conversion tool with premium features and professional quality.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">Twitter</a>
+                        <a href="#" class="social-link">Facebook</a>
+                        <a href="#" class="social-link">Instagram</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#converter">Converter</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#premium">Premium</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Supported Formats</h4>
+                    <ul>
+                        <li>PDF to Word</li>
+                        <li>Word to PDF</li>
+                        <li>Excel to PDF</li>
+                        <li>PDF to Excel</li>
+                        <li>PowerPoint to PDF</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact Us</h4>
+                    <ul>
+                        <li>support@docconvertpro.com</li>
+                        <li>+1 (555) 123-4567</li>
+                        <li>Mon-Fri: 9am-6pm EST</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 DocConvert Pro. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
